@@ -1,0 +1,45 @@
+trigger:
+- main
+pool:
+  name: 'Default'
+stages:
+- stage: Build
+  jobs: 
+  - job: Build
+    steps:
+    - task: Npm@1
+      inputs:
+        command: 'install'
+    - task: Npm@1
+      inputs:
+        command: 'custom'
+        customCommand: 'run build'
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: 'build'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
+
+     
+- stage: Deploy
+  jobs: 
+  - job: Deploy
+    steps:
+    - task: DownloadBuildArtifacts@1
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'drop'
+        downloadPath: '$(System.ArtifactsDirectory)'
+      
+    - task: AzureRmWebAppDeployment@5
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'Azure subscription 1 (8b303a18-46ae-4194-865b-860a7315604f)'
+        appType: 'webAppLinux'
+        WebAppName: 'ytclone'
+        packageForLinux: '$(System.ArtifactsDirectory)/drop'
+        RuntimeStack: 'NODE|22-lts'
+        DeploymentTypeLinux: 'oneDeploy'
+    
